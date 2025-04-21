@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <!-- 视口强化设置 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="HandheldFriendly" content="true">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="icon" type="image/x-icon" href="img/Default-Logo.png">
     <title>Pixiv作品直达工具</title>
     <style>
         * {
             box-sizing: border-box; /* 修复盒模型计算 */
+            touch-action: manipulation; /* 防止浏览器缩放手势 */
         }
 
         :root {
@@ -29,6 +32,8 @@
             background-size: cover;
             background-position: center;
             -webkit-tap-highlight-color: transparent;
+            touch-action: pan-y; /* 只允许垂直滚动，禁止缩放 */
+            overflow-x: hidden; /* 防止水平溢出 */
         }
 
         /* 移动端专用背景 */
@@ -36,6 +41,37 @@
             body {
                 background-image: linear-gradient(rgba(255,255,255,0.3), rgba(255,255,255,0.3)),
                                   url('img/Default-Background-Phone.png');
+                padding: 0;
+                align-items: center;
+            }
+            
+            .container {
+                width: 80%;
+                max-width: 280px;
+                padding: 1rem 0.8rem;
+                margin: 0 auto;
+            }
+            
+            button {
+                width: 100%;
+                padding: 0.7rem;
+                font-size: 0.9rem;
+            }
+
+            h1 {
+                font-size: 1.25rem;
+                margin: 0.3rem 0 0.5rem;
+            }
+
+            .logo {
+                width: 50px;
+                height: 50px;
+                margin-bottom: 0.3rem;
+            }
+            
+            p {
+                font-size: 0.85rem;
+                margin: 0.7rem 0;
             }
         }
 
@@ -65,47 +101,79 @@
         /* 超小屏优化 */
         @media (max-width: 480px) {
             .container {
-                width: 100%;
-                margin: 0;
-                border-radius: 0;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                padding: 1.2rem;
+                width: 80%;
+                margin: 0 auto;
+                border-radius: 10px;
+                min-height: auto;
+                padding: 0.8rem 0.6rem;
             }
 
             h1 {
-                font-size: 1.5rem;
-                margin: 0.5rem 0;
+                font-size: 1.1rem;
+                margin: 0.2rem 0;
             }
 
             #pixivId {
-                font-size: 16px;
-                padding: 0.8rem;
-                margin: 0.8rem 0;
+                font-size: 14px;
+                padding: 0.6rem;
+                margin: 0.4rem 0;
+                border-radius: 6px;
             }
 
             button {
                 width: 100%;
-                font-size: 16px;
-                padding: 0.8rem;
-                margin: 0.5rem 0;
+                font-size: 0.9rem;
+                padding: 0.6rem;
+                margin: 0.3rem 0;
+                border-radius: 6px;
             }
 
             p {
-                font-size: 0.9rem;
-                margin: 1rem 0;
+                font-size: 0.75rem;
+                margin: 0.5rem 0;
             }
 
             .logo {
-                width: 60px;
-                height: 60px;
-                margin: 0 auto 0.8rem;
+                width: 42px;
+                height: 42px;
+                margin: 0 auto 0.3rem;
             }
 
             .error-message {
+                margin: 0.2rem 0;
+                font-size: 0.7rem;
+                min-height: 0.9rem;
+            }
+        }
+
+        /* 小型手机屏幕额外优化 */
+        @media (max-width: 350px) {
+            .container {
+                width: 90%;
+                padding: 0.7rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            }
+            
+            h1 {
+                font-size: 1.1rem;
+                margin: 0.2rem 0;
+            }
+            
+            .logo {
+                width: 40px;
+                height: 40px;
+                margin-bottom: 0.3rem;
+            }
+            
+            #pixivId, button {
+                padding: 0.6rem;
                 margin: 0.3rem 0;
+            }
+
+            p {
+                margin: 0.4rem 0;
+                font-size: 0.75rem;
             }
         }
 
@@ -126,6 +194,8 @@
             cursor: pointer;
             transition: background 0.3s;
             min-height: 44px; /* 满足最小点击区域 */
+            margin: 0 auto;
+            display: block;
         }
 
         button:hover {
@@ -163,6 +233,23 @@
             'use strict';
             // 触控延迟优化
             document.addEventListener('touchstart', function(){}, {passive: true});
+
+            // 防止双指缩放
+            document.addEventListener('touchmove', function(event) {
+                if (event.touches.length > 1) {
+                    event.preventDefault();
+                }
+            }, { passive: false });
+
+            // 防止双击缩放
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(event) {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
 
             const elements = {
                 input: document.getElementById('pixivId'),
